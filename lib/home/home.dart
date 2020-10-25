@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/all.dart';
 import 'package:pocfluttermovieapp/home/movie_service.dart';
+import 'package:pocfluttermovieapp/home/movies_exception.dart';
 import 'movie.dart';
 
 final moviesFutureProvider = FutureProvider.autoDispose<List<Movie>>((ref) async {
@@ -24,7 +25,10 @@ class HomePage extends ConsumerWidget {
       ),
       body: watch(moviesFutureProvider).when(
         error: (e, s){
-          return Text("error");
+          if (e is MoviesException) {
+            return _ErrorBody(message: e.message);
+          }
+          return _ErrorBody(message: 'Sorry... something unexpected went wrong :-(');
         },
         loading: () => Center( child: CircularProgressIndicator()),
         data: (movies) {
@@ -41,6 +45,32 @@ class HomePage extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ErrorBody extends StatelessWidget {
+  const _ErrorBody({
+    Key key,
+    @required this.message,
+  }) : assert(message != null, 'A non-null String must be provided'),
+  super(key: key);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(message),
+          ElevatedButton(
+            onPressed: ()=>context.refresh(moviesFutureProvider),
+            child: Text("Try again"),
+          ),
+        ],
       ),
     );
   }
